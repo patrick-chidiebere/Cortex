@@ -4,900 +4,86 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#080b14">
-<title>Cortex AI — Your Thinking Space</title>
-
-<!-- DOMPurify for HTML Sanitization & XSS Protection -->
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
-
-<!-- Markdown Parsing & Syntax Highlighting -->
-<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" id="hljsTheme">
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
-
-<!-- KaTeX for Math Formatting -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-
-<!-- Mermaid.js for Diagrams -->
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
-
+<title>Cortex AI — Think Beyond</title>
 <style>
-:root {
-  color-scheme: dark;
-  --bg: #080b14;
-  --panel: #0f1422;
-  --panel2: #121a2b;
-  --line: #222b40;
-  --text: #eef2ff;
-  --muted: #98a5c0;
-  --blue: #4f8cff;
-  --violet: #8b5cf6;
-  --emerald: #10b981;
-  --danger: #fb7185;
-  --bubble-ai: #141c2d;
-  --bubble-user: linear-gradient(135deg, #275ac3, #5b55d8);
-  --code-bg: #090d16;
-}
-
-html.light {
-  color-scheme: light;
-  --bg: #f4f7fc;
-  --panel: #ffffff;
-  --panel2: #edf2f9;
-  --line: #d1dbe8;
-  --text: #1a202c;
-  --muted: #64748b;
-  --blue: #3b82f6;
-  --violet: #7c3aed;
-  --bubble-ai: #e2e8f0;
-  --bubble-user: linear-gradient(135deg, #2563eb, #4f46e5);
-  --code-bg: #1e293b;
-}
-
-* { box-sizing: border-box; }
-html, body {
-  margin: 0;
-  min-height: 100%;
-  background: radial-gradient(ellipse at 15% 0%, #142044 0, transparent 42%), var(--bg);
-  color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-button, textarea, select { font: inherit; }
-button { cursor: pointer; }
-button:disabled { opacity: 0.55; cursor: not-allowed; }
-
-/* Splash Screen */
-#splash {
-  position: fixed;
-  inset: 0;
-  background: #080b14;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  transition: opacity 0.6s ease, visibility 0.6s ease;
-}
-
-#splash.hidden {
-  opacity: 0;
-  visibility: hidden;
-}
-
-.splash-logo-wrap {
-  position: relative;
-  max-width: 380px;
-  width: 100%;
-  text-align: center;
-}
-
-.splash-img {
-  width: 100%;
-  max-width: 320px;
-  height: auto;
-  border-radius: 20px;
-  box-shadow: 0 0 50px rgba(79, 140, 255, 0.25);
-  animation: pulseLogo 2.5s infinite ease-in-out;
-}
-
-@keyframes pulseLogo {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(79,140,255,0.3)); }
-  50% { transform: scale(1.02); filter: drop-shadow(0 0 28px rgba(139,92,246,0.5)); }
-}
-
-.splash-creator {
-  margin-top: 24px;
-  font-size: 13px;
-  letter-spacing: 0.18em;
-  color: #98a5c0;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-.splash-creator span {
-  color: #4f8cff;
-  font-weight: 800;
-}
-
-.splash-progress-track {
-  width: 180px;
-  height: 4px;
-  background: #192338;
-  border-radius: 10px;
-  margin-top: 18px;
-  overflow: hidden;
-  position: relative;
-}
-
-.splash-progress-bar {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--blue), var(--violet));
-  border-radius: 10px;
-  transition: width 0.3s ease;
-}
-
-/* App Layout */
-.app {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  max-width: 1050px;
-  margin: auto;
-  padding: 0 16px;
-}
-
-/* Sticky Navigation Header */
-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  height: 68px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg);
-  backdrop-filter: blur(12px);
-  gap: 12px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  font-weight: 850;
-  letter-spacing: 0.09em;
-}
-
-.logo {
-  height: 39px;
-  width: 39px;
-  border-radius: 13px;
-  background: linear-gradient(140deg, var(--blue), var(--violet));
-  display: grid;
-  place-items: center;
-  box-shadow: 0 8px 28px #4f8cff35;
-  font-size: 20px;
-  color: #ffffff;
-}
-
-.brand small {
-  display: block;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.15em;
-  margin-top: 2px;
-}
-
-.header-actions { display: flex; gap: 8px; align-items: center; }
-
-.icon-btn, .soft-btn {
-  border: 1px solid var(--line);
-  background: #ffffff08;
-  color: var(--text);
-  border-radius: 12px;
-  padding: 8px 14px;
-  font-size: 13px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s;
-}
-
-.icon-btn:hover, .soft-btn:hover {
-  background: #ffffff14;
-  border-color: var(--blue);
-}
-
-/* Main Area */
-main {
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 20px 0 22px;
-}
-
-.hero { padding: 15px 4px 18px; }
-.eyebrow {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--blue);
-  font-weight: 800;
-}
-
-.hero h1 {
-  font-size: clamp(24px, 4.5vw, 36px);
-  line-height: 1.15;
-  letter-spacing: -0.03em;
-  margin: 8px 0;
-}
-
-.gradient {
-  background: linear-gradient(90deg, #e9f1ff, var(--blue), var(--violet));
-  color: transparent;
-  background-clip: text;
-  -webkit-background-clip: text;
-}
-
-.hero p {
-  color: var(--muted);
-  font-size: 13.5px;
-  line-height: 1.6;
-  margin: 0;
-  max-width: 640px;
-}
-
-/* Chat Console */
-.chat {
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--panel);
-  box-shadow: 0 22px 70px rgba(0,0,0,0.25);
-  display: flex;
-  flex-direction: column;
-  min-height: 420px;
-  flex: 1;
-  overflow: hidden;
-}
-
-.chat-top {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--panel2);
-}
-
-.chat-title { font-size: 13px; font-weight: 750; display: flex; align-items: center; gap: 8px; }
-.status-dot { width: 8px; height: 8px; background: var(--emerald); border-radius: 50%; box-shadow: 0 0 8px var(--emerald); }
-.chat-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
-.messages {
-  padding: 18px 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  flex: 1;
-  min-height: 250px;
-  max-height: 58vh;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-}
-
-.welcome {
-  border: 1px solid var(--line);
-  background: var(--panel2);
-  border-radius: 16px;
-  padding: 16px;
-}
-
-.welcome-head { font-size: 12px; font-weight: 800; color: var(--blue); letter-spacing: 0.05em; }
-.welcome p { font-size: 13px; color: var(--muted); line-height: 1.6; margin: 8px 0 12px; }
-
-.suggested-prompts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 8px;
-}
-
-.prompt-card {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 10px;
-  font-size: 12px;
-  color: var(--text);
-  text-align: left;
-  transition: all 0.2s;
-}
-
-.prompt-card:hover {
-  border-color: var(--blue);
-  transform: translateY(-1px);
-}
-
-.msg {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-width: 92%;
-  align-self: flex-start;
-  scroll-margin-top: 80px;
-}
-
-.msg.user { align-self: flex-end; }
-.sender { font-size: 10px; color: var(--muted); padding: 0 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
-
-.bubble {
-  font-size: 13.5px;
-  line-height: 1.65;
-  border: 1px solid var(--line);
-  background: var(--bubble-ai);
-  border-radius: 6px 18px 18px 18px;
-  padding: 14px 16px;
-  word-break: break-word;
-}
-
-.msg.user .bubble {
-  background: var(--bubble-user);
-  border-color: rgba(255,255,255,0.2);
-  color: white;
-  border-radius: 18px 6px 18px 18px;
-}
-
-.msg.error .bubble {
-  background: rgba(251, 113, 133, 0.1);
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
-.bubble p { margin: 0 0 10px; }
-.bubble p:last-child { margin-bottom: 0; }
-.bubble ul, .bubble ol { margin: 6px 0 10px; padding-left: 20px; }
-.bubble h1, .bubble h2, .bubble h3 { margin: 10px 0 6px; line-height: 1.3; }
-
-/* Table Styling */
-.bubble table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 12px 0;
-  display: block;
-  overflow-x: auto;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-}
-
-.bubble th, .bubble td {
-  padding: 9px 13px;
-  border: 1px solid var(--line);
-  text-align: left;
-  font-size: 13px;
-}
-
-.bubble th {
-  background: var(--panel2);
-  font-weight: 700;
-  color: var(--blue);
-}
-
-/* Embedded Images */
-.bubble img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 12px;
-  margin: 12px 0;
-  border: 1px solid var(--line);
-}
-
-/* Action Chips */
-.action-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--line);
-}
-
-.chip-btn {
-  background: var(--panel2);
-  border: 1px solid var(--line);
-  color: var(--text);
-  border-radius: 16px;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.chip-btn:hover {
-  border-color: var(--blue);
-  color: var(--blue);
-  transform: translateY(-1px);
-}
-
-.bubble code:not(pre code) {
-  background: rgba(255,255,255,0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 12.5px;
-  font-family: monospace;
-}
-
-.bubble pre {
-  margin: 10px 0;
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--code-bg) !important;
-  border: 1px solid var(--line);
-}
-
-.code-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(0,0,0,0.2);
-  padding: 6px 12px;
-  font-size: 11px;
-  color: var(--muted);
-  border-bottom: 1px solid var(--line);
-}
-
-.copy-code-btn {
-  background: transparent;
-  border: 1px solid var(--line);
-  color: var(--text);
-  border-radius: 5px;
-  padding: 3px 8px;
-  font-size: 11px;
-}
-
-.copy-code-btn:hover { background: var(--blue); color: #fff; }
-
-.composer-wrap {
-  padding: 13px;
-  border-top: 1px solid var(--line);
-  background: var(--panel2);
-}
-
-.composer {
-  display: flex;
-  gap: 9px;
-  align-items: flex-end;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 8px;
-}
-
-.composer:focus-within {
-  border-color: var(--blue);
-}
-
-.composer textarea {
-  flex: 1;
-  resize: none;
-  min-height: 44px;
-  max-height: 140px;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--text);
-  padding: 10px 7px;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.send {
-  height: 43px;
-  min-width: 45px;
-  border: 0;
-  border-radius: 12px;
-  background: linear-gradient(140deg, var(--blue), var(--violet));
-  color: white;
-  font-size: 19px;
-  box-shadow: 0 6px 18px rgba(79,140,255,0.25);
-}
-
-.hint { font-size: 10px; color: var(--muted); text-align: center; padding-top: 8px; }
-
-/* Typing Indicator */
-.typing { display: inline-flex; gap: 4px; align-items: center; padding: 4px 0; }
-.typing i {
-  height: 6px;
-  width: 6px;
-  border-radius: 50%;
-  background: var(--blue);
-  animation: bounce 1s infinite ease-in-out;
-}
-.typing i:nth-child(2) { animation-delay: 0.15s; }
-.typing i:nth-child(3) { animation-delay: 0.3s; }
-@keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
-
-/* Modal Settings */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-
-.modal-overlay.open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.modal {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  max-width: 480px;
-  width: 100%;
-  padding: 22px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 18px;
-}
-
-.modal-title { font-size: 16px; font-weight: 800; }
-.close-btn { background: none; border: none; font-size: 18px; color: var(--muted); }
-
-.setting-group { margin-bottom: 18px; }
-.setting-label { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; display: block; }
-.setting-select {
-  width: 100%;
-  padding: 9px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--panel2);
-  color: var(--text);
-  font-size: 13px;
-}
-
-footer { font-size: 11px; text-align: center; color: var(--muted); padding: 16px 0 20px; }
-
-@media(min-width: 760px) {
-  .app { padding: 0 25px; }
-  main { padding-top: 25px; }
-  .messages { padding: 22px; max-height: 60vh; }
-  .msg { max-width: 85%; }
-}
+:root{color-scheme:dark;--bg:#080b14;--panel:#0f1422;--panel2:#121a2b;--line:#222b40;--text:#eef2ff;--muted:#98a5c0;--blue:#4f8cff;--violet:#8b5cf6;--danger:#fb7185}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 15% 0%,#142044 0,transparent 42%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.app{min-height:100dvh;display:flex;flex-direction:column;max-width:1100px;margin:auto;padding:0 16px}
+header{height:68px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff12;gap:12px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:850;letter-spacing:.09em}.logo{height:39px;width:39px;border-radius:13px;background:linear-gradient(140deg,var(--blue),var(--violet));display:grid;place-items:center;box-shadow:0 8px 28px #4f8cff35;font-size:22px}.brand small{display:block;color:var(--muted);font-size:10px;font-weight:650;letter-spacing:.19em;margin-top:3px}
+.header-actions{display:flex;gap:8px}.icon-btn,.soft-btn{border:1px solid var(--line);background:#ffffff08;color:var(--text);border-radius:12px;padding:10px 12px}.icon-btn{font-size:17px}
+main{width:100%;max-width:850px;margin:0 auto;flex:1;display:flex;flex-direction:column;padding:24px 0 22px}
+.hero{padding:25px 4px 22px}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:#9dbaff;font-weight:800}.hero h1{font-size:clamp(27px,5vw,42px);line-height:1.13;letter-spacing:-.04em;margin:10px 0}.gradient{background:linear-gradient(90deg,#e9f1ff,#8db5ff,#b69bff);color:transparent;background-clip:text}.hero p{color:var(--muted);font-size:14px;line-height:1.65;margin:0;max-width:590px}
+.status{display:inline-flex;align-items:center;gap:7px;border:1px solid #253a37;background:#10221f;color:#8be0bd;border-radius:99px;padding:7px 10px;font-size:11px;margin-top:15px}.dot{width:7px;height:7px;background:#56d6a0;border-radius:50%;box-shadow:0 0 10px #56d6a0}
+.chat{border:1px solid #ffffff14;border-radius:20px;background:linear-gradient(160deg,#101727ed,#0b101ced);box-shadow:0 22px 70px #0005;display:flex;flex-direction:column;min-height:390px;flex:1;overflow:hidden}
+.chat-top{padding:14px 16px;border-bottom:1px solid #ffffff10;display:flex;align-items:center;justify-content:space-between}.chat-title{font-size:13px;font-weight:750}.chat-sub{font-size:11px;color:var(--muted);margin-top:3px}.new-btn{background:#ffffff08;border:1px solid var(--line);color:#d7e1fa;border-radius:10px;padding:8px 10px;font-size:12px}
+.messages{padding:19px 15px;display:flex;flex-direction:column;gap:17px;flex:1;min-height:250px;max-height:52vh;overflow:auto;scroll-behavior:smooth}
+.welcome{border:1px solid #4f8cff2b;background:linear-gradient(130deg,#18254280,#17162b80);border-radius:16px;padding:17px}.welcome-head{font-size:12px;font-weight:800;color:#a8c5ff;letter-spacing:.05em}.welcome p{font-size:13px;color:#b9c5dc;line-height:1.65;margin:9px 0 0}
+.msg{display:flex;flex-direction:column;gap:6px;max-width:92%;align-self:flex-start}.msg.user{align-self:flex-end}.sender{font-size:10px;color:#8493b1;padding:0 4px;letter-spacing:.08em;text-transform:uppercase}.bubble{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.7;border:1px solid var(--line);background:#141c2d;border-radius:5px 16px 16px 16px;padding:12px 14px}.msg.user .bubble{background:linear-gradient(135deg,#275ac3,#5b55d8);border-color:#6489ff55;color:white;border-radius:16px 5px 16px 16px}.msg.error .bubble{background:#351722;border-color:#6d293c;color:#ffb9c5}
+.composer-wrap{padding:13px;border-top:1px solid #ffffff10;background:#0b101a}.composer{display:flex;gap:9px;align-items:flex-end;background:#101828;border:1px solid #2a3550;border-radius:16px;padding:8px;transition:border-color .2s}.composer:focus-within{border-color:#588dff;box-shadow:0 0 0 3px #4f8cff12}.composer textarea{flex:1;resize:none;min-height:44px;max-height:140px;border:0;outline:0;background:transparent;color:var(--text);padding:10px 7px;font-size:14px;line-height:1.5}.composer textarea::placeholder{color:#73819d}.send{height:43px;min-width:45px;border:0;border-radius:12px;background:linear-gradient(140deg,var(--blue),var(--violet));color:white;font-size:19px;box-shadow:0 6px 18px #4f8cff25}.hint{font-size:10px;color:#75829c;text-align:center;padding-top:9px}.error-note{color:#ffb4c0;font-size:12px;line-height:1.5;margin-top:9px;display:none}.typing{display:inline-flex;gap:4px;align-items:center}.typing i{height:5px;width:5px;border-radius:50%;background:#9eb8f9;animation:bounce 1s infinite ease-in-out}.typing i:nth-child(2){animation-delay:.12s}.typing i:nth-child(3){animation-delay:.24s}@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+footer{font-size:10px;text-align:center;color:#66738f;padding:14px 0 20px}.side-panel{display:none}
+@media(min-width:760px){.app{padding:0 25px}main{padding-top:35px}.hero{padding:30px 5px 25px}.messages{padding:24px;max-height:56vh}.composer-wrap{padding:16px}.bubble{font-size:14px}.msg{max-width:85%}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
-
-<!-- Splash Screen -->
-<div id="splash">
-  <div class="splash-logo-wrap">
-    <img src="1792411354204.jpg" alt="Cortex AI Logo" class="splash-img" onerror="this.style.display='none'">
-    <div class="splash-creator">Created by <span>Patrick Chidiebere David</span></div>
-    <div class="splash-progress-track">
-      <div class="splash-progress-bar" id="splashBar"></div>
-    </div>
-  </div>
-</div>
-
 <div class="app">
 <header>
-  <div class="brand">
-    <button class="icon-btn" id="hamburgerBtn" title="Menu">☰</button>
-    <div class="logo">⌘</div>
-    <div>CORTEX AI<small>YOUR THINKING SPACE</small></div>
-  </div>
-  <div class="header-actions">
-    <button class="icon-btn" id="themeToggleBtn" title="Toggle Theme">🌙</button>
-    <button class="icon-btn" id="settingsBtn" title="Settings">⚙️</button>
-    <button class="soft-btn" id="clearHistoryBtn" title="Clear chat memory">🗑️</button>
-    <button class="icon-btn" id="newChatTop" title="New Chat">＋</button>
-  </div>
+  <div class="brand"><div class="logo">⌘</div><div>CORTEX AI<small>YOUR THINKING SPACE</small></div></div>
+  <div class="header-actions"><button class="icon-btn" id="newChatTop" aria-label="New chat" title="New chat">＋</button></div>
 </header>
-
 <main>
   <section class="hero">
     <div class="eyebrow">AI • Learning • Ideas</div>
     <h1>Think deeper.<br><span class="gradient">Build beyond.</span></h1>
-    <p>Your study space to solve problems, visualize diagrams, and explore topics with persistent memory.</p>
+    <p>Your space to ask questions, understand difficult topics, explore ideas, and work through code — powered by Cortex AI.</p>
+    <div class="status"><span class="dot"></span><span>Chat service ready to connect</span></div>
   </section>
-
   <section class="chat" aria-label="Cortex chat">
-    <div class="chat-top">
-      <div>
-        <div class="chat-title"><span class="status-dot"></span> Cortex Assistant</div>
-        <div class="chat-sub">openai/gpt-oss-120b · Groq Engine</div>
-      </div>
-      <button class="soft-btn" id="newChat">New Chat ↻</button>
+    <div class="chat-top"><div><div class="chat-title">Cortex Assistant</div><div class="chat-sub">Text chat · Powered by Groq</div></div><button class="new-btn" id="newChat">New chat ↻</button></div>
+    <div class="messages" id="messages" aria-live="polite">
+      <div class="welcome" id="welcome"><div class="welcome-head">✦ WELCOME TO CORTEX</div><p>I'm ready when you are. Ask me to explain a concept, help with a coding problem, brainstorm an idea, or make a difficult topic easier to understand.</p></div>
     </div>
-
-    <div class="messages" id="messages">
-      <div class="welcome" id="welcome">
-        <div class="welcome-head">✦ WELCOME TO CORTEX AI</div>
-        <p>I'm ready when you are. Ask me to explain a concept, format math formulas, draw diagrams, or test your knowledge.</p>
-        <div class="suggested-prompts">
-          <button class="prompt-card" data-prompt="Explain quantum computing in simple terms with an everyday analogy.">
-            💡 <strong>Explain Concept</strong><br>Quantum computing simply
-          </button>
-          <button class="prompt-card" data-prompt="Draw a flowchart of how a web browser fetches a website.">
-            📊 <strong>Visual Diagram</strong><br>Browser request flowchart
-          </button>
-        </div>
-      </div>
-    </div>
-
     <div class="composer-wrap">
-      <div class="composer">
-        <textarea id="prompt" rows="1" maxlength="12000" placeholder="Message Cortex AI…"></textarea>
-        <button class="send" id="send" aria-label="Send message">↑</button>
-      </div>
-      <div class="hint">Press Enter to send · Shift + Enter for line break · Memory active</div>
+      <div class="composer"><textarea id="prompt" rows="1" maxlength="12000" placeholder="Message Cortex AI…" aria-label="Message Cortex AI"></textarea><button class="send" id="send" aria-label="Send message" title="Send message">↑</button></div>
+      <div class="hint">Enter to send · Shift + Enter for a new line</div>
+      <div class="error-note" id="errorNote"></div>
     </div>
   </section>
 </main>
-
-<footer>Created by Patrick Chidiebere David · Powered by Cortex AI</footer>
+<footer>Keep exploring. Keep building. · Cortex AI</footer>
 </div>
-
-<!-- Settings Modal -->
-<div class="modal-overlay" id="settingsModal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">Preferences & Settings</div>
-      <button class="close-btn" id="closeModalBtn">✕</button>
-    </div>
-    
-    <div class="setting-group">
-      <label class="setting-label">Appearance Theme</label>
-      <select class="setting-select" id="themeSelect">
-        <option value="dark">Dark Mode (Default)</option>
-        <option value="light">Light Mode</option>
-      </select>
-    </div>
-
-    <div class="setting-group">
-      <label class="setting-label">Persona Mode</label>
-      <select class="setting-select" id="personaSelect">
-        <option value="tutor">Socratic Tutor (Educational)</option>
-        <option value="developer">Senior Software Engineer</option>
-        <option value="concise">Concise Assistant</option>
-      </select>
-    </div>
-  </div>
-</div>
-
 <script>
 (() => {
   "use strict";
-
+  // Updated worker URL point to the operational endpoint
   const WORKER_URL = "https://final.patrickchidiebered.workers.dev/";
-  const STORAGE_KEY = "cortex_chat_history_v4";
-  const SETTINGS_KEY = "cortex_settings_v4";
-  const MAX_HISTORY_MESSAGES = 16; // Fix #3: Send only recent context
-
-  // Elements
-  const splash = document.getElementById("splash");
-  const splashBar = document.getElementById("splashBar");
   const promptEl = document.getElementById("prompt");
   const sendBtn = document.getElementById("send");
   const messagesEl = document.getElementById("messages");
-  const settingsModal = document.getElementById("settingsModal");
-  const themeSelect = document.getElementById("themeSelect");
-  const themeToggleBtn = document.getElementById("themeToggleBtn");
-  const personaSelect = document.getElementById("personaSelect");
-
+  const errorNote = document.getElementById("errorNote");
   let conversation = [];
   let busy = false;
-  let settings = {
-    theme: "dark",
-    persona: "tutor"
-  };
 
-  function initSplash() {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 20;
-      splashBar.style.width = progress + "%";
-      if (progress >= 100) {
-        clearInterval(interval);
-        setTimeout(() => splash.classList.add("hidden"), 300);
-      }
-    }, 100);
-  }
-
-  mermaid.initialize({ startOnLoad: false, theme: 'dark' });
-
-  // Custom Marked Renderer for Mermaid blocks (Fix #7)
-  const renderer = new marked.Renderer();
-  renderer.code = function(code, lang) {
-    if (lang === 'mermaid') {
-      return `<div class="mermaid">${code}</div>`;
-    }
-    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-    const highlighted = hljs.highlight(code, { language }).value;
-    return `<pre><code class="hljs language-${language}">${highlighted}</code></pre>`;
-  };
-
-  marked.setOptions({ renderer, breaks: true });
-
-  function loadSettings() {
-    try {
-      const saved = localStorage.getItem(SETTINGS_KEY);
-      if (saved) settings = { ...settings, ...JSON.parse(saved) };
-    } catch(e){}
-    
-    applyTheme(settings.theme);
-    themeSelect.value = settings.theme;
-    if (personaSelect) personaSelect.value = settings.persona || "tutor";
-  }
-
-  function saveSettings() {
-    settings.theme = themeSelect.value;
-    if (personaSelect) settings.persona = personaSelect.value;
-    try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    } catch(e) {}
-    applyTheme(settings.theme);
-  }
-
-  function applyTheme(theme) {
-    if (theme === "light") {
-      document.documentElement.classList.add("light");
-      document.documentElement.classList.remove("dark");
-      themeToggleBtn.textContent = "☀️";
-    } else {
-      document.documentElement.classList.add("dark");
-      document.documentElement.classList.remove("light");
-      themeToggleBtn.textContent = "🌙";
-    }
-  }
-
-  function saveHistory() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(conversation));
-    } catch(e) {
-      console.warn("Storage full or unavailable. History not saved.");
-    }
-  }
-
-  function loadHistory() {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        conversation = JSON.parse(saved);
-        if (conversation.length > 0) {
-          const welcome = document.getElementById("welcome");
-          if (welcome) welcome.remove();
-          conversation.forEach(msg => {
-            renderMessage(msg.role === "user" ? "YOU" : "CORTEX AI", msg.content, msg.role, false);
-          });
-        }
-      }
-    } catch(e) { conversation = []; }
-  }
-
-  // Fix #4: Smart Math Rendering without breaking code blocks or currency prices
-  function renderMarkdownAndMath(rawText) {
-    try {
-      // Parse Markdown first
-      let parsedHTML = marked.parse(rawText);
-
-      // Fix #1: Sanitize HTML against XSS injection
-      let cleanHTML = DOMPurify.sanitize(parsedHTML, {
-        ADD_TAGS: ['div', 'span', 'button'],
-        ADD_ATTR: ['class', 'data-action', 'data-prompt', 'onerror', 'src']
-      });
-
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = cleanHTML;
-
-      // Render Display Math ($$ ... $$)
-      tempDiv.innerHTML = tempDiv.innerHTML.replace(/\$\$([\s\S]+?)\$\$/g, (_, eq) => {
-        return katex.renderToString(eq, { displayMode: true, throwOnError: false });
-      });
-
-      // Render Inline Math ($ ... $), avoiding currency like $5 or $10
-      tempDiv.innerHTML = tempDiv.innerHTML.replace(/(^|[^\$])\$([^\$\n]+?)\$([^\$]|$)/g, (_, lead, eq, trail) => {
-        // Skip if it looks purely like a price or code variable
-        if (/^\d+(\.\d+)?$/.test(eq.trim())) return `${lead}\$${eq}\$${trail}`;
-        return lead + katex.renderToString(eq, { displayMode: false, throwOnError: false }) + trail;
-      });
-
-      // Add code block headers and copy buttons
-      tempDiv.querySelectorAll("pre").forEach(pre => {
-        const codeEl = pre.querySelector("code");
-        if (!codeEl) return;
-        const langClass = codeEl.className.match(/language-(\w+)/);
-        const lang = langClass ? langClass[1] : "code";
-
-        const header = document.createElement("div");
-        header.className = "code-header";
-        header.innerHTML = `<span>${lang.toUpperCase()}</span><button class="copy-code-btn">Copy</button>`;
-
-        header.querySelector(".copy-code-btn").addEventListener("click", (e) => {
-          navigator.clipboard.writeText(codeEl.innerText);
-          e.target.textContent = "Copied! ✓";
-          setTimeout(() => e.target.textContent = "Copy", 1800);
-        });
-
-        pre.parentNode.insertBefore(header, pre);
-      });
-
-      return tempDiv.innerHTML;
-    } catch(e) { 
-      return DOMPurify.sanitize(rawText); 
-    }
-  }
-
-  function renderMessage(who, text, role, shouldScroll = true) {
+  function addMessage(who, text, kind) {
     const row = document.createElement("div");
-    row.className = "msg" + (role === "user" ? " user" : role === "error" ? " error" : "");
-
+    row.className = "msg" + (kind === "user" ? " user" : kind === "error" ? " error" : "");
     const label = document.createElement("div");
     label.className = "sender";
     label.textContent = who;
-
     const bubble = document.createElement("div");
     bubble.className = "bubble";
-    if (role === "user" || role === "error") {
-      bubble.textContent = text;
-    } else {
-      bubble.innerHTML = renderMarkdownAndMath(text);
-
-      // Render Mermaid diagrams safely
-      setTimeout(() => {
-        mermaid.run({ nodes: bubble.querySelectorAll('.mermaid') });
-      }, 50);
-
-      // Action Chips
-      const chips = document.createElement("div");
-      chips.className = "action-chips";
-      chips.innerHTML = `
-        <button class="chip-btn" data-action="Explain this more simply">⚡ Explain simply</button>
-        <button class="chip-btn" data-action="Shorten this response">📝 Shorten</button>
-        <button class="chip-btn" data-action="Give me a practice quiz on this">❓ Practice quiz</button>
-      `;
-      bubble.appendChild(chips);
-    }
-
+    bubble.textContent = text;
     row.append(label, bubble);
     messagesEl.appendChild(row);
-
-    if (shouldScroll) {
-      if (role === "assistant") {
-        row.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      }
-    }
-
+    messagesEl.scrollTop = messagesEl.scrollHeight;
     return row;
   }
 
   function showTyping() {
     const row = document.createElement("div");
     row.className = "msg";
-    row.innerHTML = '<div class="sender">CORTEX AI</div><div class="bubble"><span class="typing"><i></i><i></i><i></i></span></div>';
+    row.innerHTML = '<div class="sender">CORTEX AI</div><div class="bubble"><span class="typing" aria-label="Thinking"><i></i><i></i><i></i></span></div>';
     messagesEl.appendChild(row);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     return row;
@@ -910,62 +96,44 @@ footer { font-size: 11px; text-align: center; color: var(--muted); padding: 16px
     sendBtn.textContent = value ? "…" : "↑";
   }
 
-  async function sendMessage(customPrompt) {
+  async function sendMessage() {
     if (busy) return;
-    const text = customPrompt || promptEl.value.trim();
-    if (!text) return;
-
-    const welcome = document.getElementById("welcome");
-    if (welcome) welcome.remove();
-
-    renderMessage("YOU", text, "user", true);
+    const text = promptEl.value.trim();
+    if (!text) { promptEl.focus(); return; }
+    const previousWelcome = document.getElementById("welcome");
+    if (previousWelcome) previousWelcome.remove();
+    errorNote.style.display = "none";
+    addMessage("YOU", text, "user");
     conversation.push({ role: "user", content: text });
-    if (!customPrompt) promptEl.value = "";
+    promptEl.value = "";
     promptEl.style.height = "auto";
-
     setBusy(true);
     const typing = showTyping();
-
-    // Fix #3: Send only the last N messages to prevent overflow & reduce costs
-    const recentMessages = conversation.slice(-MAX_HISTORY_MESSAGES);
 
     try {
       const response = await fetch(WORKER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          messages: recentMessages, 
-          persona: settings.persona 
-        })
+        body: JSON.stringify({ messages: conversation })
       });
-
-      // Fix #5: Proper Error Handling for HTTP Error Statuses
+      let data = {};
+      try { data = await response.json(); } catch (_) {}
       if (!response.ok) {
-        let errDetail = `Server returned status ${response.status}`;
-        try {
-          const errData = await response.json();
-          if (errData.error) errDetail = errData.error;
-        } catch(e) {}
-        throw new Error(errDetail);
+        const detail = data && typeof data.error === "string" ? data.error : "Server returned HTTP " + response.status + ".";
+        throw new Error(detail);
       }
-
-      const data = await response.json();
+      if (!data || typeof data.reply !== "string" || !data.reply.trim()) {
+        throw new Error("The server responded without an answer. Please try again.");
+      }
+      conversation.push({ role: "assistant", content: data.reply });
       typing.remove();
-
-      const reply = data.choices?.[0]?.message?.content || data.reply;
-
-      if (reply) {
-        conversation.push({ role: "assistant", content: reply });
-        renderMessage("CORTEX AI", reply, "assistant", true);
-        saveHistory();
-      } else {
-        throw new Error("No response content received.");
-      }
-
+      addMessage("CORTEX AI", data.reply, "assistant");
     } catch (err) {
       typing.remove();
       if (conversation.length && conversation[conversation.length - 1].role === "user") conversation.pop();
-      renderMessage("ERROR", err.message || "Failed to reach server.", "error", true);
+      let message = err && err.message ? err.message : "Unknown connection error.";
+      if (message === "Failed to fetch") message = "Could not reach the Cortex server. Check your connection and confirm the Cloudflare Worker is deployed and allows this website's origin.";
+      addMessage("CONNECTION ISSUE", message, "error");
     } finally {
       setBusy(false);
       promptEl.focus();
@@ -974,65 +142,24 @@ footer { font-size: 11px; text-align: center; color: var(--muted); padding: 16px
 
   function newChat() {
     conversation = [];
-    localStorage.removeItem(STORAGE_KEY);
-    messagesEl.innerHTML = `
-      <div class="welcome" id="welcome">
-        <div class="welcome-head">✦ NEW CHAT SESSION</div>
-        <p>Memory cleared. What new study topic or question would you like to explore?</p>
-      </div>
-    `;
+    messagesEl.innerHTML = '<div class="welcome" id="welcome"><div class="welcome-head">✦ NEW CONVERSATION</div><p>New chat started. What would you like to explore?</p></div>';
+    errorNote.style.display = "none";
     promptEl.focus();
   }
 
-  // Event Listeners
-  sendBtn.addEventListener("click", () => sendMessage());
-  promptEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
+  sendBtn.addEventListener("click", sendMessage);
+  promptEl.addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
       sendMessage();
     }
   });
-
   promptEl.addEventListener("input", () => {
     promptEl.style.height = "auto";
     promptEl.style.height = Math.min(promptEl.scrollHeight, 140) + "px";
   });
-
   document.getElementById("newChat").addEventListener("click", newChat);
   document.getElementById("newChatTop").addEventListener("click", newChat);
-  document.getElementById("clearHistoryBtn").addEventListener("click", newChat);
-
-  document.getElementById("settingsBtn").addEventListener("click", () => settingsModal.classList.add("open"));
-  document.getElementById("closeModalBtn").addEventListener("click", () => {
-    saveSettings();
-    settingsModal.classList.remove("open");
-  });
-
-  themeToggleBtn.addEventListener("click", () => {
-    themeSelect.value = settings.theme === "dark" ? "light" : "dark";
-    saveSettings();
-  });
-
-  themeSelect.addEventListener("change", saveSettings);
-  if (personaSelect) personaSelect.addEventListener("change", saveSettings);
-
-  document.addEventListener("click", (e) => {
-    const card = e.target.closest("[data-prompt]");
-    if (card) {
-      promptEl.value = card.getAttribute("data-prompt");
-      sendMessage();
-    }
-
-    const chip = e.target.closest("[data-action]");
-    if (chip) {
-      const actionText = chip.getAttribute("data-action");
-      sendMessage(actionText);
-    }
-  });
-
-  initSplash();
-  loadSettings();
-  loadHistory();
 })();
 </script>
 </body>

@@ -56,7 +56,7 @@ footer{font-size:10px;text-align:center;color:#66738f;padding:14px 0 20px}.side-
 <script>
 (() => {
   "use strict";
-  // Public endpoint only. The Groq API key must stay in Cloudflare Worker Secrets.
+  // Public endpoint pointing to your deployed Cloudflare Worker
   const WORKER_URL = "https://cortexai-api.patrickchidiebered.workers.dev/";
   const promptEl = document.getElementById("prompt");
   const sendBtn = document.getElementById("send");
@@ -130,7 +130,6 @@ footer{font-size:10px;text-align:center;color:#66738f;padding:14px 0 20px}.side-
       addMessage("CORTEX AI", data.reply, "assistant");
     } catch (err) {
       typing.remove();
-      // Permit retry without duplicating a failed user turn in the API history.
       if (conversation.length && conversation[conversation.length - 1].role === "user") conversation.pop();
       let message = err && err.message ? err.message : "Unknown connection error.";
       if (message === "Failed to fetch") message = "Could not reach the Cortex server. Check your connection and confirm the Cloudflare Worker is deployed and allows this website's origin.";

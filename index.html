@@ -48,6 +48,18 @@ html[data-theme="light"]{color-scheme:light;--bg:#f4f7fc;--bg-glow:#e3eaff;--pan
 .main:has(.messages > .msg) .hero{display:none}
 footer{flex:0 0 auto}
 @media(max-width:650px){footer{display:none}}
+
+/* Cortex scroll and Canvas controls — bounded flex scroll area, touch-safe on mobile. */
+.app{height:100dvh!important;min-height:0!important;overflow:hidden!important}
+.main{flex:1 1 0!important;min-height:0!important}
+.chat{flex:1 1 0!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden!important}
+.messages{flex:1 1 0px!important;height:0!important;min-height:0!important;max-height:none!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-y:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable}
+.chat-top,.composer-wrap{flex:0 0 auto!important}
+.canvas-sticky-tools{position:sticky;top:63px;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-7px -5px 14px;padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 5px 18px #0002}
+.canvas-sticky-label{font-size:10px;letter-spacing:.12em;font-weight:850;color:var(--muted);text-transform:uppercase}
+.canvas-restart-btn{font-size:12px!important;font-weight:800!important;padding:9px 13px!important;white-space:nowrap}
+@media(max-width:650px){.canvas-sticky-tools{top:61px;margin:-4px -2px 12px;padding:8px}.canvas-restart-btn{padding:9px 11px!important}}
+
 </style>
 </head>
 <body>
@@ -456,9 +468,12 @@ footer{flex:0 0 auto}
       down.addEventListener('click',()=>{openWorkspace('feedback'); const input=$('feedbackText'); if(input) input.value='This answer needs improvement: '+text.slice(0,700); const sel=$('feedbackType'); if(sel) sel.value='answer';});
       tools.append(copy,read,save,up,down); row.append(tools);
     }
-    els.messages.append(row);
-    if (kind === 'assistant') requestAnimationFrame(() => { const box=els.messages; box.scrollTop += row.getBoundingClientRect().top - box.getBoundingClientRect().top - 12; });
-    else scrollMessages(true);
+    const messagePane=els.messages;
+    const wasNearBottom=messagePane.scrollHeight-messagePane.scrollTop-messagePane.clientHeight<90;
+    messagePane.append(row);
+    // Follow new content only while the reader is already near the end. If they have
+    // scrolled up to read, leave their position alone. Scroll the pane, never the page.
+    if(kind!=='assistant'||wasNearBottom) scrollMessages(true);
     return row;
   }
 
@@ -469,9 +484,13 @@ footer{flex:0 0 auto}
   }
 
   function scrollMessages(toBottom) {
-    // Do not yank the reader to the bottom when a caller asks to preserve position.
+    // The messages element is the sole chat scroll container. Avoid scrolling the document.
     if (!toBottom) return;
-    requestAnimationFrame(() => { els.messages.scrollTop=els.messages.scrollHeight; });
+    requestAnimationFrame(() => {
+      const box = els.messages;
+      if (!box || !box.isConnected) return;
+      box.scrollTo({ top: box.scrollHeight, behavior: settings.reducedMotion ? 'auto' : 'smooth' });
+    });
   }
 
   function showTyping() {
@@ -700,6 +719,7 @@ footer{flex:0 0 auto}
   let liveRestartTimer = null;
   let canvasState = restoreExamState();
   let canvasTimer = null;
+  let canvasGenerationToken = 0;
   const workspaceTitles = {
     projects:['Projects','Keep related chats, notes and project instructions together.'],
     library:['Saved Library','Your locally saved explanations, notes, answers and study packs.'],
@@ -813,11 +833,29 @@ footer{flex:0 0 auto}
     if(name==='canvas' && canvasState?.status==='active') startCanvasTimer();
     if(name==='live') renderLiveTranscript();
   }
-  function closeWorkspace() { if(currentWorkspace==='live' && liveActive) stopLiveSession(false); closeModal($('workspaceModal')); if(canvasTimer){clearInterval(canvasTimer);canvasTimer=null;} }
+  function closeWorkspace() {
+    if(currentWorkspace==='live' && liveActive) stopLiveSession(false);
+    // Invalidate a pending Canvas generation when the workspace is closed.
+    canvasGenerationToken++;
+    closeModal($('workspaceModal'));
+    if(canvasTimer){clearInterval(canvasTimer);canvasTimer=null;}
+  }
+  function restartCanvas() {
+    if(canvasState?.status==='active' && !window.confirm('Restart Canvas and discard your answers in this unfinished exam?')) return;
+    canvasGenerationToken++;
+    if(canvasTimer){clearInterval(canvasTimer);canvasTimer=null;}
+    canvasState=null;
+    safeWrite(EXTRA_KEYS.activeExam,null);
+    renderWorkspace();
+  }
   function renderWorkspace() {
     const box=$('workspaceContent'); if(!box)return;
     const renderers={projects:renderProjects,library:renderLibrary,search:renderLearningSearch,canvas:renderCanvas,planner:renderPlanner,analytics:renderAnalytics,lab:renderLab,guide:renderGuide,sources:renderSources,voice:renderVoice,live:renderLive,memory:renderMemory,feedback:renderFeedback,privacy:renderPrivacy,flashcards:renderFlashcards};
-    const fn=renderers[currentWorkspace]||renderProjects; box.innerHTML=fn();
+    const fn=renderers[currentWorkspace]||renderProjects;
+    const content=fn();
+    box.innerHTML=currentWorkspace==='canvas'
+      ? `<div class="canvas-sticky-tools"><span class="canvas-sticky-label">Canvas workspace</span><button type="button" class="small-btn canvas-restart-btn" data-action="restart-canvas">↻ Restart Canvas</button></div>${content}`
+      : content;
     if(currentWorkspace==='lab') updateLab();
   }
   function renderProjects() {
@@ -839,7 +877,7 @@ footer{flex:0 0 auto}
     if(canvasState?.status==='results') return renderExamResults();
     if(canvasState?.status==='flashcards') return renderFlashcardSession();
     return `<p class="workspace-lead">Canvas creates practice multiple-choice exams. Questions are AI-generated unless you use an authentic paper with a verifiable source; generated practice is not represented as an official WAEC/JAMB past paper.</p>
-    <form id="canvasSetupForm" class="workspace-form"><div class="field-row"><div class="field"><label for="canvasSubject">Subject *</label><input id="canvasSubject" required maxlength="120" placeholder="e.g. Mathematics"></div><div class="field"><label for="canvasTopic">Topic (optional)</label><input id="canvasTopic" maxlength="180" placeholder="e.g. Quadratic equations"></div></div><div class="field-row"><div class="field"><label for="canvasCount">Number of questions</label><select id="canvasCount"><option value="5">5 questions</option><option value="10">10 questions</option><option value="15">15 questions</option><option value="20">20 questions</option></select></div><div class="field"><label for="canvasTime">Time limit</label><select id="canvasTime"><option value="0">No time limit</option><option value="10">10 minutes</option><option value="20" selected>20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option></select></div></div><div class="field"><label for="canvasStyle">After-exam explanations</label><select id="canvasStyle"><option value="detailed">Detailed explanations after submission</option><option value="brief">Brief explanations after submission</option></select></div><div class="mode-checklist"><label><input id="canvasExamMode" type="checkbox" checked> Exam mode: hide answers and explanations until final submission.</label><label><input id="canvasGeneratedLabel" type="checkbox" checked> Label this as AI-generated practice unless an authentic source is provided.</label></div><button class="small-btn primary" type="submit">Generate practice exam</button><div class="fine-print">Canvas checks the question format, four distinct options, and answer-key labels before the exam starts. The answer key is still AI-generated and may contain mistakes; it is not independently certified unless checked against a trusted source.</div></form><div id="canvasStatus" class="answer-area"></div>${safeRead(EXTRA_KEYS.activeExam,null)?.status==='active'?'<button class="small-btn" data-action="resume-exam">Resume saved exam</button>':''}`;
+    <form id="canvasSetupForm" class="workspace-form"><div class="field-row"><div class="field"><label for="canvasSubject">Subject *</label><input id="canvasSubject" required maxlength="120" placeholder="e.g. Mathematics, Biology, History"></div><div class="field"><label for="canvasTopic">Topic (optional)</label><input id="canvasTopic" maxlength="180" placeholder="e.g. Algebra, cells, World War II"></div></div><div class="field-row"><div class="field"><label for="canvasCount">Number of questions</label><input id="canvasCount" type="number" inputmode="numeric" min="1" max="50" step="1" value="5" required aria-describedby="canvasCountHelp"><small id="canvasCountHelp" class="fine-print">Enter any whole number from 1 to 50.</small></div><div class="field"><label for="canvasTime">Time limit (minutes)</label><input id="canvasTime" type="number" inputmode="numeric" min="0" max="600" step="1" placeholder="Leave blank for no time limit" aria-describedby="canvasTimeHelp"><small id="canvasTimeHelp" class="fine-print">Optional. Leave blank or enter 0 for no timer.</small></div></div><div class="field"><label for="canvasStyle">After-exam explanations</label><select id="canvasStyle"><option value="detailed">Detailed explanations after submission</option><option value="brief">Brief explanations after submission</option></select></div><div class="mode-checklist"><label><input id="canvasExamMode" type="checkbox" checked> Exam mode: hide answers and explanations until final submission.</label><label><input id="canvasGeneratedLabel" type="checkbox" checked> Label this as AI-generated practice unless an authentic source is provided.</label></div><button class="small-btn primary" type="submit">Generate practice exam</button><div class="fine-print">Canvas checks the question format, four distinct options, and answer-key labels before the exam starts. The answer key is still AI-generated and may contain mistakes; it is not independently certified unless checked against a trusted source.</div></form><div id="canvasStatus" class="answer-area"></div>${safeRead(EXTRA_KEYS.activeExam,null)?.status==='active'?'<button class="small-btn" data-action="resume-exam">Resume saved exam</button>':''}`;
   }
   function renderActiveExam() {
     if(!canvasState||!canvasState.questions?.length)return '<div class="empty-state">No active exam found. Return to setup.</div>';
@@ -865,18 +903,116 @@ footer{flex:0 0 auto}
     const update=()=>{const el=$('examTimer'); const rem=Math.max(0,Math.ceil((canvasState.endAt-Date.now())/1000)); if(el)el.textContent=formatTime(rem); if(rem<=0&&canvasState.status==='active'){clearInterval(canvasTimer);canvasTimer=null;submitExam(true);}};
     update(); canvasTimer=setInterval(update,500);
   }
+  function normalizeCanvasQuestion(q) {
+    if(!q || typeof q!=='object') return null;
+    let rawOptions=Array.isArray(q.options)?q.options:null;
+    if(!rawOptions && q.options && typeof q.options==='object') {
+      rawOptions=['A','B','C','D'].map(k=>q.options[k]??q.options[k.toLowerCase()]);
+    }
+    if(!rawOptions || rawOptions.length!==4) return null;
+    const options=rawOptions.map(v=>String(v??'').trim().replace(/^[A-D][.)\s:-]+/i,'').trim());
+    const unique=options.map(v=>v.toLocaleLowerCase().replace(/\s+/g,' '));
+    const question=String(q.question??q.prompt??'').trim();
+    const explanation=String(q.explanation??q.rationale??'').trim();
+    const rawCorrect=q.correct??q.correctAnswer??q.answer??q.answerKey??'';
+    let correct='';
+    if(Number.isInteger(rawCorrect) && rawCorrect>=0 && rawCorrect<=3) correct='ABCD'[rawCorrect];
+    else {
+      const key=String(rawCorrect).trim();
+      const letter=key.match(/^(?:OPTION\s*)?([A-D])(?:\b|[.)\s:-])/i) || key.match(/^(?:OPTION\s*)?([A-D])$/i);
+      if(letter) correct=letter[1].toUpperCase();
+      else {
+        const textKey=key.toLocaleLowerCase().replace(/^[A-D][.)\s:-]+/i,'').replace(/\s+/g,' ').trim();
+        const index=options.findIndex(o=>o.toLocaleLowerCase().replace(/\s+/g,' ')===textKey);
+        if(index>=0) correct='ABCD'[index];
+      }
+    }
+    if(!question || options.some(x=>!x) || new Set(unique).size!==4 || !correct || !explanation) return null;
+    return {question,options,correct,explanation};
+  }
+  function readCanvasQuestionBatch(raw) {
+    const parsed=parseJSONFromAI(raw);
+    const list=Array.isArray(parsed?.questions)?parsed.questions:(Array.isArray(parsed)?parsed:[]);
+    return list.map(normalizeCanvasQuestion).filter(Boolean);
+  }
+  function canvasQuestionKey(question) {
+    return String(question||'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+  }
+  async function generateCanvasQuestionBatch({subject,topic,count,style,priorQuestions,token,status,start,total}) {
+    const collected=[];
+    let lastError=null;
+    for(let attempt=1;attempt<=3 && collected.length<count;attempt++) {
+      if(token!==canvasGenerationToken) return null;
+      const needed=count-collected.length;
+      const used=[...priorQuestions,...collected].map(q=>q.question).filter(Boolean);
+      const avoid=used.slice(-16).map((q,i)=>`${i+1}. ${String(q).slice(0,180)}`).join('\n');
+      status.textContent=`Generating questions ${start}–${Math.min(total,start+count-1)} of ${total} · attempt ${attempt}/3…`;
+      const ask=`You are creating a reliable educational practice quiz. Create exactly ${needed} NEW, distinct multiple-choice practice question${needed===1?'':'s'}.
+Subject: ${subject}
+Specific topic: ${topic || 'Not specified. Cover a balanced, appropriate range of this subject; do not assume the topic is algebra or mathematics.'}
+Context and rules:
+- Keep every question clearly about the subject above and, if given, the specific topic.
+- Difficulty: suitable for a secondary-school learner unless the subject/topic clearly implies another level.
+- Do not repeat or closely paraphrase any question in the existing list below.
+- Every question must have exactly four distinct, plausible options in an array, one best answer, a correct-answer letter A/B/C/D, and a clear explanation.
+- Make the answer key internally consistent; questions must be answerable and not depend on missing diagrams or unspecified data.
+- Do not call these official WAEC/JAMB past questions. They are original AI-generated practice.
+Return ONLY valid JSON (no Markdown, comments, or introductory text) matching exactly this schema: {"questions":[{"question":"...","options":["...","...","...","..."],"correct":"A","explanation":"..."}]}
+Explanations should be ${style==='brief'?'brief (one or two sentences)':'clear, detailed, and show the key reasoning'}.
+${avoid?`Questions already created; avoid duplicates:\n${avoid}`:'No earlier questions have been created yet.'}`;
+      // Transport/backend errors should be shown immediately; only malformed or
+      // incomplete model output is retried, so an invalid API token is not retried repeatedly.
+      const raw=await requestCortex([{role:'user',content:ask}]);
+      if(token!==canvasGenerationToken) return null;
+      try {
+        const batch=readCanvasQuestionBatch(raw);
+        const seen=new Set(used.map(canvasQuestionKey));
+        for(const q of batch) {
+          const key=canvasQuestionKey(q.question);
+          if(!key || seen.has(key)) continue;
+          seen.add(key); collected.push(q);
+          if(collected.length>=count) break;
+        }
+        if(collected.length<count) lastError=new Error(`The model provided ${collected.length} valid question(s) in this batch; retrying the missing question(s).`);
+      } catch(e) { lastError=e; }
+    }
+    if(token!==canvasGenerationToken) return null;
+    if(collected.length!==count) throw new Error(`Canvas could not validate all requested questions for “${subject}”. ${lastError?.message||''} Try again or request fewer questions.`);
+    return collected;
+  }
   async function generateCanvasExam(form) {
-    const subject=$('canvasSubject').value.trim(),topic=$('canvasTopic').value.trim(),count=Number($('canvasCount').value),minutes=Number($('canvasTime').value),style=$('canvasStyle').value;
-    const status=$('canvasStatus'); const submit=form.querySelector('[type=submit]'); submit.disabled=true; status.classList.remove('hidden'); status.textContent='Generating and validating questions…';
+    const subject=$('canvasSubject').value.trim(),topic=$('canvasTopic').value.trim();
+    const countRaw=$('canvasCount').value.trim(),count=Number(countRaw);
+    const minutesRaw=$('canvasTime').value.trim(),minutes=minutesRaw===''?0:Number(minutesRaw);
+    const style=$('canvasStyle').value;
+    const status=$('canvasStatus'); const submit=form.querySelector('[type=submit]');
+    if(!subject){$('canvasSubject').focus();return;}
+    if(!countRaw||!Number.isInteger(count)||count<1||count>50){showToast('Enter a whole number of questions from 1 to 50.');$('canvasCount').focus();return;}
+    if(minutesRaw!==''&&(!Number.isInteger(minutes)||minutes<0||minutes>600)){showToast('Enter 0–600 whole minutes, or leave the time limit blank.');$('canvasTime').focus();return;}
+    if(canvasTimer){clearInterval(canvasTimer);canvasTimer=null;}
+    const token=++canvasGenerationToken;
+    canvasState=null;safeWrite(EXTRA_KEYS.activeExam,null);
+    submit.disabled=true; status.classList.remove('hidden'); status.textContent='Preparing your practice exam…';
     try {
-      const ask=`Create exactly ${count} original multiple-choice practice questions for ${subject}${topic?' on '+topic:''}. Return ONLY valid JSON, no Markdown, with schema {"questions":[{"question":"...","options":["...","...","...","..."],"correct":"A","explanation":"..."}]}. Each question must have exactly four distinct plausible options, exactly one best answer, correct must be A, B, C, or D, and explanation must explain the correct answer. Check the key for consistency. Do not invent claims that these are official WAEC/JAMB past questions; these are generated practice questions. Difficulty should suit a secondary-school learner unless the request says otherwise. Explanations should be ${style==='brief'?'brief':'clear and detailed'}.`;
-      const raw=await requestCortex([{role:'user',content:ask}]); const parsed=parseJSONFromAI(raw); const qs=Array.isArray(parsed?.questions)?parsed.questions:[];
-      const validated=qs.map(q=>({question:String(q.question||'').trim(),options:Array.isArray(q.options)?q.options.slice(0,4).map(x=>String(x||'').trim()):[],correct:String(q.correct||'').trim().toUpperCase(),explanation:String(q.explanation||'').trim()})).filter(q=>q.question&&q.options.length===4&&q.options.every(Boolean)&&['A','B','C','D'].includes(q.correct)&&new Set(q.options).size===4);
-      if(validated.length!==count) throw new Error(`The AI returned ${validated.length} valid questions out of ${count} requested. The exam was not started, so the answer key cannot be trusted. Try again or request fewer questions.`);
-      canvasState={status:'active',subject,topic,questions:validated,answers:Array(count).fill(''),index:0,minutes,style,generated:true,startedAt:Date.now(),endAt:minutes?Date.now()+minutes*60000:null,examMode:true};
+      const validated=[]; const batchSize=5;
+      for(let offset=0;offset<count;offset+=batchSize) {
+        if(token!==canvasGenerationToken) return;
+        const batchCount=Math.min(batchSize,count-offset);
+        status.textContent=`Generating questions ${offset+1}–${offset+batchCount} of ${count}…`;
+        const batch=await generateCanvasQuestionBatch({subject,topic,count:batchCount,style,priorQuestions:validated,token,status,start:offset+1,total:count});
+        if(token!==canvasGenerationToken || !batch) return;
+        validated.push(...batch);
+      }
+      if(token!==canvasGenerationToken) return;
+      if(validated.length!==count) throw new Error(`Canvas prepared ${validated.length} of ${count} requested questions. The exam was not started.`);
+      canvasState={status:'active',subject,topic,questions:validated,answers:Array(count).fill(''),index:0,minutes,style,generated:true,startedAt:Date.now(),endAt:minutes?Date.now()+minutes*60000:null,examMode:$('canvasExamMode')?.checked!==false};
       persistExam(); renderWorkspace(); startCanvasTimer();
-    } catch(e) { status.textContent='Could not create a validated exam: '+String(e.message||e); showToast('Canvas could not validate this exam.'); }
-    finally { if(submit)submit.disabled=false; }
+    } catch(e) {
+      if(token===canvasGenerationToken) {
+        status.textContent='Could not create a validated exam: '+String(e.message||e);
+        showToast('Canvas could not validate this exam. Your setup is still available to edit and retry.');
+      }
+    } finally { if(submit)submit.disabled=false; }
   }
   function parseJSONFromAI(text) {
     let value=String(text||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
@@ -1043,7 +1179,11 @@ footer{flex:0 0 auto}
     if(target.matches('[data-project-instructions]')){const ps=allExtra(EXTRA_KEYS.projects);const p=ps.find(x=>x.id===target.dataset.projectInstructions);if(p){p.instructions=target.value.slice(0,2500);safeWrite(EXTRA_KEYS.projects,ps);showToast('Project instructions saved.');}}
     if(target.id==='sideA'||target.id==='sideB')updateLab();
     if(target.matches('[data-task-toggle]')){const ts=allExtra(EXTRA_KEYS.planner);const task=ts.find(x=>x.id===target.dataset.taskToggle);if(task){task.done=target.checked;task.completedAt=target.checked?Date.now():null;safeWrite(EXTRA_KEYS.planner,ts);if(target.checked){const done=ts.filter(t=>t.done).length;if(done===1||done===5||done===10)announceMilestone('planner-'+done,'Milestone: '+done+' study task(s) completed. Keep taking it one step at a time.');else showToast('Task marked complete. One more step finished.');}renderWorkspace();}}
-    if(target.name==='quizAnswer'&&canvasState?.status==='active'){canvasState.answers[canvasState.index]=target.value;persistExam();renderWorkspace();}
+    if(target.name==='quizAnswer'&&canvasState?.status==='active'){
+      canvasState.answers[canvasState.index]=target.value;
+      persistExam();
+      $('workspaceContent').querySelectorAll('.quiz-option').forEach(label=>label.classList.toggle('selected',label.contains(target)));
+    }
   });
   $('workspaceContent').addEventListener('submit',async(event)=>{
     event.preventDefault();const form=event.target;
@@ -1066,6 +1206,7 @@ footer{flex:0 0 auto}
     else if(a==='export-library')exportLibrary();else if(a==='print-library'){const w=window.open('','_blank');if(!w){showToast('Allow pop-ups to print saved learning.');return;}const text=allExtra(EXTRA_KEYS.library).map(x=>'<h2>'+esc(x.title)+'</h2><pre>'+esc(x.content)+'</pre>').join('<hr>');w.document.write('<!doctype html><title>Cortex Saved Library</title><style>body{font:16px sans-serif;max-width:800px;margin:30px auto;line-height:1.6}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:14px sans-serif}hr{margin:24px 0}</style>'+text);w.document.close();w.focus();w.print();}
     else if(a==='save-current'){const text=getLatestAssistant();if(text)saveLibraryItem('Latest Cortex answer',text,'answer');else showToast('No assistant answer in this chat yet.');}
     else if(a==='resume-exam'){canvasState=restoreExamState();renderWorkspace();startCanvasTimer();}
+    else if(a==='restart-canvas'){restartCanvas();}
     else if(a==='exam-prev'&&canvasState?.status==='active'&&canvasState.index>0){canvasState.index--;persistExam();renderWorkspace();}
     else if(a==='exam-next'&&canvasState?.status==='active'&&canvasState.index<canvasState.questions.length-1){canvasState.index++;persistExam();renderWorkspace();}
     else if(a==='submit-exam')submitExam(false);
